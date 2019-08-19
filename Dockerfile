@@ -218,7 +218,7 @@ VOLUME /data/db /data/configdb
 #
 
 COPY docker-entrypoint.sh /usr/local/bin/
-RUN ln -s usr/local/bin/docker-entrypoint.sh /entrypoint.sh;
+RUN ln -s usr/local/bin/docker-entrypoint.sh /entrypoint.sh; \
     mkdir /app; \
     mongod --version; \
     redis-server --version; \
