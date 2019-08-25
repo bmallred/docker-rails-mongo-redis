@@ -39,31 +39,36 @@ RUN set -eux; \
 	} >> /usr/local/etc/gemrc; \
     apt-get update -qq; \
     apt-get install -y --no-install-recommends \
-            ca-certificates \
-            git \
-            ssh \
-	    tar \
-	    gzip \
-            gcc \
-	    libc6-dev \
-	    dpkg-dev \
-	    libgdbm-dev \
-	    ruby \
-            make \
-            build-essential \
-            libpq-dev \
-            tcl8.5 \
-            nodejs \
-            imagemagick \
-            curl \
-	    wget \
-	    gnupg2 \
-            libgmp3-dev \
-            libgtkmm-3.0.1 \
-            libnotify4 \
-	    bison \
-	    jq \
-	    numactl; \
+                bison \
+                build-essential \
+                ca-certificates \
+                curl \
+                dpkg-dev \
+                gcc \
+                git \
+                gnupg2 \
+                gzip \
+                imagemagick \
+                jq \
+                libc6-dev \
+                libcurl3-dev \
+                libfftw3-double3 \
+                libgdbm-dev \
+                libgmp3-dev \
+                libgsl0-dev \
+                libgtkmm-3.0.1 \
+                libpq-dev \
+                libnotify4 \
+                make \
+                nodejs \
+                numactl \
+                openjdk-8-jdk \
+                ruby \
+                ssh \
+	            tar \
+                tcl8.5 \
+	            wget \
+                zip; \
     if ! command -v ps > /dev/null; then \
         apt-get install -y --no-install-recommends procps; \
     fi; \
@@ -73,6 +78,32 @@ RUN set -eux; \
         apt-get install -y --no-install-recommends gnupg-curl; \
     fi; \
     rm -rf /var/lib/apt/lists/*;
+
+#
+# Make the install directory
+#
+RUN mkdir -p /mnt; chmod 0777 /mnt;
+
+#
+# Android SDK
+#
+RUN cd /mnt; \
+    wget http://dl.google.com/android/android-sdk_r24.2-linux.tgz; \
+    tar -xvf android-sdk_r24.2-linux.tgz --no-same-owner; \
+    echo y | /mnt/android-sdk-linux/tools/android update sdk -t 1,2,3,4,5,6 -u -a;
+
+#
+# Lib Sodium
+#
+RUN cd /mnt; \
+    wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.16.tar.gz; \
+    gunzip libsodium-1.0.16.tar.gz; \
+    tar -xvf libsodium-1.0.16.tar; \
+    cd /mnt/libsodium-1.0.16; 
+    ./configure; \
+    make; \
+    make check; \
+    make install; 
 
 #
 # Ruby
