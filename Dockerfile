@@ -67,6 +67,7 @@ RUN set -eux; \
                 ssh \
 	            tar \
                 tcl8.5 \
+                unzip \
 	            wget \
                 zip; \
     if ! command -v ps > /dev/null; then \
