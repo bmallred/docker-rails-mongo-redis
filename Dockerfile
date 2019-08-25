@@ -99,7 +99,7 @@ RUN cd /mnt; \
     wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.16.tar.gz; \
     gunzip libsodium-1.0.16.tar.gz; \
     tar -xvf libsodium-1.0.16.tar; \
-    cd /mnt/libsodium-1.0.16; 
+    cd /mnt/libsodium-1.0.16; \
     ./configure; \
     make; \
     make check; \
