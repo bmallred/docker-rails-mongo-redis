@@ -83,7 +83,7 @@ RUN set -eux; \
 #
 # Android SDK
 #
-RUN cd /user/local; \
+RUN cd /usr/local; \
     wget http://dl.google.com/android/android-sdk_r24.2-linux.tgz; \
     tar -xvf android-sdk_r24.2-linux.tgz --no-same-owner; \
     echo y | android-sdk-linux/tools/android update sdk -t 1,2,3,4,5,6 -u -a; \
