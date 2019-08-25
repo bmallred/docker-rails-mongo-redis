@@ -80,30 +80,29 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*;
 
 #
-# Make the install directory
-#
-RUN mkdir -p /mnt; chmod 0777 /mnt;
-
-#
 # Android SDK
 #
-RUN cd /mnt; \
+RUN cd /user/local; \
     wget http://dl.google.com/android/android-sdk_r24.2-linux.tgz; \
     tar -xvf android-sdk_r24.2-linux.tgz --no-same-owner; \
-    echo y | /mnt/android-sdk-linux/tools/android update sdk -t 1,2,3,4,5,6 -u -a;
+    echo y | android-sdk-linux/tools/android update sdk -t 1,2,3,4,5,6 -u -a; \
+    rm -f android-sdk_r24.2-linux.tgz;
 
 #
 # Lib Sodium
 #
-RUN cd /mnt; \
+RUN cd /usr/local; \
     wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.16.tar.gz; \
     gunzip libsodium-1.0.16.tar.gz; \
     tar -xvf libsodium-1.0.16.tar; \
-    cd /mnt/libsodium-1.0.16; \
+    cd libsodium-1.0.16; \
     ./configure; \
     make; \
     make check; \
-    make install; 
+    make install; \
+    cd ..; \
+    rm -f libsodium-1.0.16.tar; \
+    rm -f libsodium-1.0.16.tar.gz;
 
 #
 # Ruby
