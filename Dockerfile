@@ -19,8 +19,8 @@ ENV RUBY_MAJOR=2.4 \
     REDIS_DOWNLOAD_SHA=2139009799d21d8ff94fc40b7f36ac46699b9e1254086299f8d3b223ca54a375 \
     JSYAML_VERSION=3.13.0 \
     GPG_KEYS=0C49F3730359A14518585931BC711F9BA15703C6 \
-    MONGO_MAJOR=3.4 \
-    MONGO_VERSION=3.4.22
+    MONGO_MAJOR=3.0 \
+    MONGO_VERSION=3.0.15
 ENV BUNDLE_PATH="$GEM_HOME" \
     BUNDLE_APP_CONFIG="$GEM_HOME" \
     PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH \
@@ -232,29 +232,28 @@ RUN set -eux; \
     groupadd -r mongodb && useradd -r -g mongodb mongodb; \
     wget -O /js-yaml.js "https://github.com/nodeca/js-yaml/raw/${JSYAML_VERSION}/dist/js-yaml.js"; \
     mkdir /docker-entrypoint-initdb.d; \
-    export GNUPGHOME="$(mktemp -d)"; \
-    for key in $GPG_KEYS; do \
-        gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
-    done; \
-    gpg --batch --export $GPG_KEYS > /etc/apt/trusted.gpg.d/mongodb.gpg; \
-    command -v gpgconf && gpgconf --kill all || :; \
-    rm -r "$GNUPGHOME"; \
-    apt-key list; \
-    set -x \
- && echo "deb http://$MONGO_REPO/apt/ubuntu xenial/${MONGO_PACKAGE%-unstable}/$MONGO_MAJOR multiverse" | tee "/etc/apt/sources.list.d/${MONGO_PACKAGE%-unstable}.list" \
- && apt-get update \
- && apt-get install -y \
-        ${MONGO_PACKAGE}=$MONGO_VERSION \
-        ${MONGO_PACKAGE}-server=$MONGO_VERSION \
-        ${MONGO_PACKAGE}-shell=$MONGO_VERSION \
-        ${MONGO_PACKAGE}-mongos=$MONGO_VERSION \
-        ${MONGO_PACKAGE}-tools=$MONGO_VERSION \
- && rm -rf /var/lib/apt/lists/* \
- && rm -rf /var/lib/mongodb \
- && mv /etc/mongod.conf /etc/mongod.conf.orig; \
-    set -eux; \
-    mkdir -p /data/db /data/configdb \
- && chown -R mongodb:mongodb /data/db /data/configdb
+#    export GNUPGHOME="$(mktemp -d)"; \
+#    for key in $GPG_KEYS; do \
+#        gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
+#    done; \
+#    gpg --batch --export $GPG_KEYS > /etc/apt/trusted.gpg.d/mongodb.gpg; \
+#    command -v gpgconf && gpgconf --kill all || :; \
+#    rm -r "$GNUPGHOME"; \
+#    apt-key list; \
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10; \
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9ECBEC467F0CEB10; \
+    wget -qO - https://www.mongodb.org/static/pgp/server-$MONGO_MAJOR.asc | sudo apt-key add -; \
+    echo "deb http://$MONGO_REPO/apt/ubuntu trusty/mongodb-org/$MONGO_MAJOR multiverse" | tee "/etc/apt/sources.list.d/$MONGO_PACKAGE.list"; \
+    apt-get update; \
+    apt-get install -y \
+        mongodb-org \
+        build-essential \
+        python-dev; \
+    rm -rf /var/lib/apt/lists/*; \
+    rm -rf /var/lib/mongodb; \
+    mv /etc/mongod.conf /etc/mongod.conf.orig; \
+    mkdir -p /data/db /data/configdb; \
+    chown -R mongodb:mongodb /data/db /data/configdb;
 
 VOLUME /data/db /data/configdb
 
