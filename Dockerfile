@@ -1,4 +1,4 @@
-FROM ubuntu:xenial
+FROM ubuntu:trusty
 
 # Allow build-time overrides (eg. to build image with MongoDB Enterprise version)
 # Options for MONGO_PACKAGE: mongodb-org OR mongodb-enterprise
@@ -62,7 +62,7 @@ RUN set -eux; \
                 make \
                 nodejs \
                 numactl \
-                openjdk-8-jdk \
+                software-properties-common \
                 ruby \
                 ssh \
 	            tar \
@@ -81,6 +81,14 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*;
 
 #
+# Android 8
+#
+RUN set -eux; \
+    add-apt-repository ppa:openjdk-r/ppa; \            
+    apt-get update; \
+    apt-get install -y openjdk-8-jdk; 
+
+#
 # Android SDK
 #
 RUN set -eux; \
@@ -89,6 +97,7 @@ RUN set -eux; \
     cd /usr/src; \
     wget https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip; \
     unzip sdk-tools-linux-4333796.zip; \
+    /var/lib/dpkg/info/ca-certificates-java.postinst configure; \
     echo y | tools/bin/sdkmanager 'build-tools;29.0.2' --sdk_root=/opt/android_sdk; \
     rm -f sdk-tools-linux-4333796.zip; \
     rm -rf tools;

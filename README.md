@@ -4,7 +4,7 @@ Docker Image
 
 To support the App47 WebUI testing container.
 
-* Ubuntu 16
+* Ubuntu 14
 * Mongo
 * Redis
 * Android build tools for 29.0.1
