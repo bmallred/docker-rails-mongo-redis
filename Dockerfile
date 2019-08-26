@@ -83,28 +83,33 @@ RUN set -eux; \
 #
 # Android SDK
 #
-RUN cd /usr/local; \
-    wget http://dl.google.com/android/android-sdk_r24.2-linux.tgz; \
-    tar -xvf android-sdk_r24.2-linux.tgz --no-same-owner; \
-    echo y | android-sdk-linux/tools/android update sdk -t 1,2,3,4,5,6 -u -a; \
-    rm -f android-sdk_r24.2-linux.tgz;
+RUN set -eux; \
+    cd /opt; \
+    mkdir -p android_sdk; \
+    cd /usr/src; \
+    wget https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip; \
+    unzip sdk-tools-linux-4333796.zip; \
+    echo y | tools/bin/sdkmanager 'build-tools;29.0.2' --sdk_root=/opt/android_sdk; \
+    rm -f sdk-tools-linux-4333796.zip; \
+    rm -rf tools;
 
 #
 # Lib Sodium
 #
-RUN cd /usr/local; \
-    wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.16.tar.gz; \
-    gunzip libsodium-1.0.16.tar.gz; \
-    tar -xvf libsodium-1.0.16.tar; \
-    cd libsodium-1.0.16; \
-    ./configure; \
-    make; \
-    make check; \
-    make install; \
-    cd ..; \
-    rm -f libsodium-1.0.16.tar; \
-    rm -f libsodium-1.0.16.tar.gz;
-
+#RUN set -eux; \
+#    cd /usr/local; \
+#    wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.16.tar.gz; \
+#    gunzip libsodium-1.0.16.tar.gz; \
+#    tar -xvf libsodium-1.0.16.tar; \
+#    cd libsodium-1.0.16; \
+#    ./configure; \
+#    make; \
+#    make check; \
+#    make install; \
+#    cd ..; \
+#    rm -f libsodium-1.0.16.tar; \
+#    rm -f libsodium-1.0.16.tar.gz;
+#
 #
 # Ruby
 #
