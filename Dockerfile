@@ -38,6 +38,7 @@ RUN set -eux; \
 		echo 'update: --no-document'; \
 	} >> /usr/local/etc/gemrc; \
     apt-get update -qq; \
+    apt-get install -y tzdata; \
     apt-get install -y --no-install-recommends \
                 bison \
                 build-essential \
