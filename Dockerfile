@@ -243,7 +243,7 @@ RUN set -eux; \
 #    apt-key list; \
     apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10; \
     apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9ECBEC467F0CEB10; \
-    wget -qO - https://www.mongodb.org/static/pgp/server-$MONGO_MAJOR.asc | sudo apt-key add -; \
+#    wget -qO - https://www.mongodb.org/static/pgp/server-$MONGO_MAJOR.asc | sudo apt-key add -; \
     echo "deb http://$MONGO_REPO/apt/ubuntu trusty/mongodb-org/$MONGO_MAJOR multiverse" | tee "/etc/apt/sources.list.d/$MONGO_PACKAGE.list"; \
     apt-get update; \
     apt-get install -y \
