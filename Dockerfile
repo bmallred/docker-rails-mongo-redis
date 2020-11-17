@@ -1,4 +1,4 @@
-FROM ubuntu:bionic
+FROM ubuntu:trusty
 
 # Allow build-time overrides (eg. to build image with MongoDB Enterprise version)
 # Options for MONGO_PACKAGE: mongodb-org OR mongodb-enterprise
@@ -33,12 +33,11 @@ ENV BUNDLE_PATH="$GEM_HOME" \
 
 RUN set -eux; \
     mkdir -p /usr/local/etc; \
-	{ \
-		echo 'install: --no-document'; \
-		echo 'update: --no-document'; \
-	} >> /usr/local/etc/gemrc; \
+    { \
+        echo 'install: --no-document'; \
+        echo 'update: --no-document'; \
+    } >> /usr/local/etc/gemrc; \
     apt-get update -qq; \
-    apt-get install -y tzdata; \
     apt-get install -y --no-install-recommends \
                 bison \
                 build-essential \
@@ -66,10 +65,10 @@ RUN set -eux; \
                 software-properties-common \
                 ruby \
                 ssh \
-	            tar \
+                tar \
                 tcl8.5 \
                 unzip \
-	            wget \
+                wget \
                 zip; \
     if ! command -v ps > /dev/null; then \
         apt-get install -y --no-install-recommends procps; \
@@ -124,57 +123,21 @@ RUN set -eux; \
 # Ruby
 #
 
-RUN wget -O ruby.tar.xz "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR%-rc}/ruby-$RUBY_VERSION.tar.xz"; \
-    echo "$RUBY_DOWNLOAD_SHA256 *ruby.tar.xz" | sha256sum --check --strict; \
-    mkdir -p /usr/src/ruby; \
-    tar -xJf ruby.tar.xz -C /usr/src/ruby --strip-components=1; \
-    rm ruby.tar.xz; \
-    cd /usr/src/ruby; \
-    # hack in "ENABLE_PATH_CHECK" disabling to suppress:
-    #   warning: Insecure world writable dir
-    { \
-        echo '#define ENABLE_PATH_CHECK 0'; \
-        echo; \
-        cat file.c; \
-    } > file.c.new; \
-    mv file.c.new file.c; \
-    autoconf; \
-    gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
-    ./configure --build="$gnuArch" --disable-install-doc --enable-shared; \
-    make -j "$(nproc)"; \
-    make install; \
-    find /usr/local -type f -executable -not \( -name '*tkinter*' \) -exec ldd '{}' ';' \
-         | awk '/=>/ { print $(NF-1) }' \
-         | sort -u \
-         | xargs -r dpkg-query --search \
-         | cut -d: -f1 \
-         | sort -u \
-         | xargs -r apt-mark manual \
-    ; \
-    cd /; \
-    rm -r /usr/src/ruby; \
-    # make sure bundled "rubygems" is older than RUBYGEMS_VERSION (https://github.com/docker-library/ruby/issues/246)
-    ruby -e 'exit(Gem::Version.create(ENV["RUBYGEMS_VERSION"]) > Gem::Version.create(Gem::VERSION))'; \
-    gem update --system "$RUBYGEMS_VERSION" && rm -r /root/.gem/; \
-    # verify we have no "ruby" packages installed
-    ! dpkg -l | grep -i ruby; \
-    [ "$(command -v ruby)" = '/usr/local/bin/ruby' ]; \
-    mkdir -p "$GEM_HOME" && chmod 777 "$GEM_HOME";
-
 #
-# Rails
+# Ruby
 #
-
-RUN command curl -sSL https://rvm.io/mpapis.asc | gpg --import -; \
-    command curl -sSL https://rvm.io/pkyczynski.asc | gpg --import -; \
-    gpg --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB; \
-    unset GEM_HOME; \
-    bash -c "curl -sSL https://get.rvm.io | bash -s stable --ruby=$RUBY_VERSION --rails; exit 0"
+RUN set -eux; \
+    gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB; \
+    curl -sSL https://get.rvm.io -o /tmp/rvm.sh; \
+    cat /tmp/rvm.sh; \
+    cat /tmp/rvm.sh | bash -s stable; 
+RUN /bin/bash -l -c "rvm install 2.4.1" 
+RUN /bin/bash -l -c "rvm use 2.4.1 --default"
+RUN /bin/bash -l -c "gem install bundler"
 
 #
 # Gosu
 #
-
 RUN savedAptMark="$(apt-mark showmanual)"; \
     dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')"; \
     wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch"; \
@@ -191,7 +154,6 @@ RUN savedAptMark="$(apt-mark showmanual)"; \
 # Redis
 # https://github.com/docker-library/redis/blob/master/5.0
 #
-
 RUN groupadd -r -g 999 redis && useradd -r -g redis -u 999 redis; \
     wget -O redis.tar.gz "$REDIS_DOWNLOAD_URL"; \
     echo "$REDIS_DOWNLOAD_SHA *redis.tar.gz" | sha256sum -c -; \
@@ -243,7 +205,7 @@ RUN set -eux; \
 #    apt-key list; \
     apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10; \
     apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9ECBEC467F0CEB10; \
-#    wget -qO - https://www.mongodb.org/static/pgp/server-$MONGO_MAJOR.asc | sudo apt-key add -; \
+    wget -qO - https://www.mongodb.org/static/pgp/server-$MONGO_MAJOR.asc | sudo apt-key add -; \
     echo "deb http://$MONGO_REPO/apt/ubuntu trusty/mongodb-org/$MONGO_MAJOR multiverse" | tee "/etc/apt/sources.list.d/$MONGO_PACKAGE.list"; \
     apt-get update; \
     apt-get install -y \
