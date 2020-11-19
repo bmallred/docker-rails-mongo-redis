@@ -1,5 +1,4 @@
 FROM ubuntu:bionic
-ARG DEBIAN_FRONTEND=noninteractive
 
 # Allow build-time overrides (eg. to build image with MongoDB Enterprise version)
 # Options for MONGO_PACKAGE: mongodb-org OR mongodb-enterprise
@@ -12,7 +11,6 @@ ENV RUBY_MAJOR=2.4 \
     RUBY_VERSION=2.4.1 \
     RUBY_DOWNLOAD_SHA256=25da31b9815bfa9bba9f9b793c055a40a35c43c6adfb1fdbd81a09099f9b529c \
     RUBYGEMS_VERSION=3.0.3 \
-    GEM_HOME=/usr/local/bundle \
     BUNDLE_SILENCE_ROOT_WARNING=1 \
     GOSU_VERSION=1.11 \
     REDIS_VERSION=5.0.5 \
@@ -22,11 +20,9 @@ ENV RUBY_MAJOR=2.4 \
     GPG_KEYS=0C49F3730359A14518585931BC711F9BA15703C6 \
     MONGO_MAJOR=4.0 \
     MONGO_VERSION=4.0.12
-ENV BUNDLE_PATH="$GEM_HOME" \
-    BUNDLE_APP_CONFIG="$GEM_HOME" \
-    PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH \
-    MONGO_PACKAGE=${MONGO_PACKAGE} \
+ENV MONGO_PACKAGE=${MONGO_PACKAGE} \
     MONGO_REPO=${MONGO_REPO}
+
 
 #
 # Dependencies
@@ -34,11 +30,13 @@ ENV BUNDLE_PATH="$GEM_HOME" \
 
 RUN set -eux; \
     mkdir -p /usr/local/etc; \
-    { \
-        echo 'install: --no-document'; \
-        echo 'update: --no-document'; \
-    } >> /usr/local/etc/gemrc; \
-    apt-get update -qq; \
+	{ \
+		echo 'install: --no-document'; \
+		echo 'update: --no-document'; \
+	} >> /usr/local/etc/gemrc; \
+    ln -fs /usr/share/zoneinfo/UCT /etc/localtime; \
+    export DEBIAN_FRONTEND=noninteractive; \
+    apt-get update; \
     apt-get install -y --no-install-recommends \
                 autoconf \
                 automake \
@@ -52,7 +50,6 @@ RUN set -eux; \
                 git \
                 gnupg2 \
                 gzip \
-                imagemagick \
                 jq \
                 libreadline-dev \
                 libc6-dev \
@@ -61,22 +58,27 @@ RUN set -eux; \
                 libffi-dev \
                 libgdbm-dev \
                 libgmp3-dev \
+                libgmp-dev \
                 libgsl0-dev \
                 libgtkmm-3.0.1 \
                 libncurses5-dev \
                 libpq-dev \
                 libnotify4 \
                 libssl-dev \
+                libtool \
+                libyaml-dev \
                 make \
                 nodejs \
                 numactl \
+                pkg-config \
                 software-properties-common \
                 ssh \
-                tar \
+	            tar \
                 tcl8.5 \
                 unzip \
-                wget \
-                zip; \
+	            wget \
+                zip \
+                zlib1g-dev; \
     if ! command -v ps > /dev/null; then \
         apt-get install -y --no-install-recommends procps; \
     fi; \
@@ -88,47 +90,12 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*;
 
 #
-# Android 8
+# Java 8
 #
 RUN set -eux; \
-    add-apt-repository ppa:openjdk-r/ppa; \            
+    add-apt-repository ppa:openjdk-r/ppa; \
     apt-get update; \
-    apt-get install -y openjdk-8-jdk; 
-
-#
-# Android SDK
-#
-RUN set -eux; \
-    cd /opt; \
-    mkdir -p android_sdk; \
-    cd /usr/src; \
-    wget https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip; \
-    unzip sdk-tools-linux-4333796.zip; \
-    /var/lib/dpkg/info/ca-certificates-java.postinst configure; \
-    echo y | tools/bin/sdkmanager 'build-tools;29.0.2' --sdk_root=/opt/android_sdk; \
-    rm -f sdk-tools-linux-4333796.zip; \
-    rm -rf tools;
-
-#
-# Lib Sodium
-#
-#RUN set -eux; \
-#    cd /usr/local; \
-#    wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.16.tar.gz; \
-#    gunzip libsodium-1.0.16.tar.gz; \
-#    tar -xvf libsodium-1.0.16.tar; \
-#    cd libsodium-1.0.16; \
-#    ./configure; \
-#    make; \
-#    make check; \
-#    make install; \
-#    cd ..; \
-#    rm -f libsodium-1.0.16.tar; \
-#    rm -f libsodium-1.0.16.tar.gz;
-#
-#
-# Ruby
-#
+    apt-get install -y openjdk-8-jdk;
 
 #
 # Ruby
@@ -137,14 +104,15 @@ RUN set -eux; \
     gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB; \
     curl -sSL https://get.rvm.io -o /tmp/rvm.sh; \
     cat /tmp/rvm.sh; \
-    cat /tmp/rvm.sh | bash -s stable; 
-RUN /bin/bash -l -c "rvm install 2.4.1" 
+    cat /tmp/rvm.sh | bash -s stable;
+RUN /bin/bash -l -c "rvm install 2.4.1"
 RUN /bin/bash -l -c "rvm use 2.4.1 --default"
 RUN /bin/bash -l -c "gem install bundler"
 
 #
 # Gosu
 #
+
 RUN savedAptMark="$(apt-mark showmanual)"; \
     dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')"; \
     wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch"; \
@@ -161,6 +129,7 @@ RUN savedAptMark="$(apt-mark showmanual)"; \
 # Redis
 # https://github.com/docker-library/redis/blob/master/5.0
 #
+
 RUN groupadd -r -g 999 redis && useradd -r -g redis -u 999 redis; \
     wget -O redis.tar.gz "$REDIS_DOWNLOAD_URL"; \
     echo "$REDIS_DOWNLOAD_SHA *redis.tar.gz" | sha256sum -c -; \
@@ -191,24 +160,33 @@ RUN groupadd -r -g 999 redis && useradd -r -g redis -u 999 redis; \
     rm -r /usr/src/redis; \
     mkdir /data && chown redis:redis /data;
 
-VOLUME /data 
+VOLUME /data
 
 #
 # Mongo
-# https://github.com/docker-library/mongo/blob/master/3.4
+# https://github.com/docker-library/mongo/blob/master/4.0
 #
 
 RUN set -eux; \
     groupadd -r mongodb && useradd -r -g mongodb mongodb; \
     wget -O /js-yaml.js "https://github.com/nodeca/js-yaml/raw/${JSYAML_VERSION}/dist/js-yaml.js"; \
     mkdir /docker-entrypoint-initdb.d; \
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 68818C72E52529D4; \
-    echo "deb http://$MONGO_REPO/apt/ubuntu bionic/mongodb-org/$MONGO_MAJOR multiverse" | tee "/etc/apt/sources.list.d/$MONGO_PACKAGE.list"; \
-    apt-get install --reinstall systemd -y; \
+    export GNUPGHOME="$(mktemp -d)"; \
+    gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys 9DA31620334BD75D9DCB49F368818C72E52529D4; \
+    gpg --batch --export 9DA31620334BD75D9DCB49F368818C72E52529D4 > /etc/apt/trusted.gpg.d/mongodb.gpg; \
+    command -v gpgconf && gpgconf --kill all || :; \
+    rm -rf "$GNUPGHOME"; \
+    apt-key list; \
+    echo "deb http://$MONGO_REPO/apt/ubuntu bionic/${MONGO_PACKAGE%-unstable}/$MONGO_MAJOR multiverse" | tee "/etc/apt/sources.list.d/${MONGO_PACKAGE%-unstable}.list"; \
+    export DEBIAN_FRONTEND=noninteractive; \
     apt-get update; \
     apt-get install -y \
-        mongodb-org \
-        build-essential \
+        ${MONGO_PACKAGE}=$MONGO_VERSION \
+        ${MONGO_PACKAGE}-server=$MONGO_VERSION \
+        ${MONGO_PACKAGE}-shell=$MONGO_VERSION \
+        ${MONGO_PACKAGE}-mongos=$MONGO_VERSION \
+        ${MONGO_PACKAGE}-tools=$MONGO_VERSION \
+	build-essential \
         python-dev; \
     rm -rf /var/lib/apt/lists/*; \
     rm -rf /var/lib/mongodb; \
