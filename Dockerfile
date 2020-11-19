@@ -1,4 +1,5 @@
-FROM ubuntu:trusty
+FROM ubuntu:bionic
+ARG DEBIAN_FRONTEND=noninteractive
 
 # Allow build-time overrides (eg. to build image with MongoDB Enterprise version)
 # Options for MONGO_PACKAGE: mongodb-org OR mongodb-enterprise
@@ -19,8 +20,8 @@ ENV RUBY_MAJOR=2.4 \
     REDIS_DOWNLOAD_SHA=2139009799d21d8ff94fc40b7f36ac46699b9e1254086299f8d3b223ca54a375 \
     JSYAML_VERSION=3.13.0 \
     GPG_KEYS=0C49F3730359A14518585931BC711F9BA15703C6 \
-    MONGO_MAJOR=3.0 \
-    MONGO_VERSION=3.0.15
+    MONGO_MAJOR=4.0 \
+    MONGO_VERSION=4.0.21
 ENV BUNDLE_PATH="$GEM_HOME" \
     BUNDLE_APP_CONFIG="$GEM_HOME" \
     PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH \
@@ -39,31 +40,37 @@ RUN set -eux; \
     } >> /usr/local/etc/gemrc; \
     apt-get update -qq; \
     apt-get install -y --no-install-recommends \
+                autoconf \
+                automake \
                 bison \
                 build-essential \
                 ca-certificates \
                 curl \
                 dpkg-dev \
+                g++ \
                 gcc \
                 git \
                 gnupg2 \
                 gzip \
                 imagemagick \
                 jq \
+                libreadline-dev \
                 libc6-dev \
                 libcurl3-dev \
                 libfftw3-double3 \
+                libffi-dev \
                 libgdbm-dev \
                 libgmp3-dev \
                 libgsl0-dev \
                 libgtkmm-3.0.1 \
+                libncurses5-dev \
                 libpq-dev \
                 libnotify4 \
+                libssl-dev \
                 make \
                 nodejs \
                 numactl \
                 software-properties-common \
-                ruby \
                 ssh \
                 tar \
                 tcl8.5 \
@@ -195,18 +202,8 @@ RUN set -eux; \
     groupadd -r mongodb && useradd -r -g mongodb mongodb; \
     wget -O /js-yaml.js "https://github.com/nodeca/js-yaml/raw/${JSYAML_VERSION}/dist/js-yaml.js"; \
     mkdir /docker-entrypoint-initdb.d; \
-#    export GNUPGHOME="$(mktemp -d)"; \
-#    for key in $GPG_KEYS; do \
-#        gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
-#    done; \
-#    gpg --batch --export $GPG_KEYS > /etc/apt/trusted.gpg.d/mongodb.gpg; \
-#    command -v gpgconf && gpgconf --kill all || :; \
-#    rm -r "$GNUPGHOME"; \
-#    apt-key list; \
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10; \
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9ECBEC467F0CEB10; \
-    wget -qO - https://www.mongodb.org/static/pgp/server-$MONGO_MAJOR.asc | sudo apt-key add -; \
-    echo "deb http://$MONGO_REPO/apt/ubuntu trusty/mongodb-org/$MONGO_MAJOR multiverse" | tee "/etc/apt/sources.list.d/$MONGO_PACKAGE.list"; \
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 68818C72E52529D4; \
+    echo "deb http://$MONGO_REPO/apt/ubuntu bionic/mongodb-org/$MONGO_MAJOR multiverse" | tee "/etc/apt/sources.list.d/$MONGO_PACKAGE.list"; \
     apt-get update; \
     apt-get install -y \
         mongodb-org \
