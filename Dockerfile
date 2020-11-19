@@ -21,7 +21,7 @@ ENV RUBY_MAJOR=2.4 \
     JSYAML_VERSION=3.13.0 \
     GPG_KEYS=0C49F3730359A14518585931BC711F9BA15703C6 \
     MONGO_MAJOR=4.0 \
-    MONGO_VERSION=4.0.21
+    MONGO_VERSION=4.0.12
 ENV BUNDLE_PATH="$GEM_HOME" \
     BUNDLE_APP_CONFIG="$GEM_HOME" \
     PATH=$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:$PATH \
@@ -204,6 +204,7 @@ RUN set -eux; \
     mkdir /docker-entrypoint-initdb.d; \
     apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 68818C72E52529D4; \
     echo "deb http://$MONGO_REPO/apt/ubuntu bionic/mongodb-org/$MONGO_MAJOR multiverse" | tee "/etc/apt/sources.list.d/$MONGO_PACKAGE.list"; \
+    apt-get install --reinstall systemd -y; \
     apt-get update; \
     apt-get install -y \
         mongodb-org \
